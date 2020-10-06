@@ -1,0 +1,2411 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Tests &amp; Coverage</title>
+    <script>
+      headings = [];
+    
+      onload = function () {
+          headings = document.querySelectorAll('h2');
+          reset();
+      };
+    
+      onscroll = function (e) {
+          var heading = find(window.scrollY);
+          if (!heading) {
+            var current = document.querySelector('#menu a.active');
+            if (current) {
+              current.className = '';
+            }
+            return;
+          }
+          var links = document.querySelectorAll('#menu a')
+                  , link;
+    
+          for (var i = 0, len = links.length; i < len; ++i) {
+              link = links[i];
+              link.className = link.getAttribute('href') == '#' + heading.id ? 'active' : '';
+          }
+      };
+    
+      function find (y) {
+          var i = headings.length
+                  , heading;
+    
+          while (i--) {
+              heading = headings[i];
+              if (y >= heading.offsetTop) {
+                  return heading;
+              }
+          }
+      }
+    
+      function toggle (className) {
+    
+          var elements = document.getElementsByClassName(className);
+    
+          for (var i = 0, il = elements.length; i < il; ++i) {
+              var element = elements[i];
+    
+              if (element.classList.contains('hide')) {
+                  element.classList.remove('hide');
+                  element.classList.add('show');
+              }
+              else {
+                  element.classList.remove('show');
+                  element.classList.add('hide');
+              }
+          };
+      }
+    
+      function reset () {
+    
+          var shownElements = document.getElementsByClassName('show');
+          var filterElements = document.querySelectorAll('input[type=checkbox]');
+    
+          for (var i = 0, il = filterElements.length; i < il; ++i) {
+              filterElements[i].checked = false;
+          }
+    
+          // Check any filters with visible elements
+          for (i = 0, il = shownElements.length; i < il; ++i) {
+              var shownElement = shownElements[i];
+              var classNames = shownElement.className.split(' ');
+              for (var ci = 0, cl = classNames.length; ci < cl; ++ci){
+                  var element = document.getElementById('show-' + classNames[ci]);
+                  if (element) {
+                      element.checked = true;
+                  }
+              }
+          }
+      };
+    
+      function filter (element) {
+    
+          toggle(element.value);
+          reset();
+      }
+    </script>
+    <style>
+        body {
+            font: 14px/1.6 Helvetica, Arial, sans-serif;
+            margin: 0;
+            color: #2c2c2c;
+        }
+    
+        #tests, #coverage, #linting {
+            padding: 60px;
+        }
+    
+        h1 a:hover {
+            text-decoration: none;
+        }
+    
+        a[href^="#"],
+        a[href^="#"]:visited {
+            color: inherit;
+            text-decoration: none;
+        }
+    
+        h2 {
+            width: 80%;
+            margin-top: 80px;
+            margin-bottom: 0;
+            font-weight: 100;
+            letter-spacing: 1px;
+        }
+    
+        ul {
+            margin-top: 20px;
+            padding: 0 15px;
+            width: 100%;
+        }
+    
+        ul li {
+            float: left;
+            width: 40%;
+            margin-top: 5px;
+            margin-right: 60px;
+            list-style: none;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+    
+        #menu {
+            position: fixed;
+            font-size: 12px;
+            overflow-y: auto;
+            top: 0;
+            right: 0;
+            margin: 0;
+            height: 100%;
+            padding: 15px 15px;
+            border-left: 1px solid #eee;
+            background-color: #666;
+            z-index: 1;
+        }
+    
+        #menu::after {
+            display: block;
+            content: '';
+            padding-top: 80px;
+        }
+    
+        #menu li a {
+            display: block;
+            color: white;
+            padding: 0 5px 0 35px;
+            transition: background 300ms;
+            text-decoration: none;
+        }
+    
+        #menu li {
+            position: relative;
+            list-style: none;
+        }
+    
+        #menu a:hover,
+        #menu a.active {
+            text-decoration: none;
+            background: rgba(255, 255, 255, .4);
+        }
+    
+        #menu li:hover .cov {
+            opacity: 1;
+        }
+    
+        #menu li .dirname {
+            opacity: .60;
+            padding-right: 2px;
+        }
+    
+        #menu li .basename {
+            opacity: 1;
+        }
+    
+        #menu .cov, #menu .lint {
+            background: rgba(0, 0, 0, .3);
+            position: absolute;
+            top: 0;
+            font-size: 9px;
+            text-align: center;
+            opacity: .8;
+            width: 22px;
+            border-radius: 10px;
+            padding: 2px 3px;
+        }
+    
+        #files .stats:nth-child(2n):not(.hide) {
+            display: inline-block;
+            margin-top: 15px;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    
+        .stats div {
+            float: left;
+            padding: 0 5px;
+        }
+    
+        .stats::after {
+            display: block;
+            content: '';
+            clear: both;
+        }
+    
+        .stats .sloc::after {
+            content: ' SLOC';
+            color: #b6b6b6;
+        }
+    
+        .stats .percentage::after {
+            content: ' coverage';
+            color: #b6b6b6;
+        }
+    
+        .stats .hits::before {
+            content: '(';
+            color: #b6b6b6;
+        }
+    
+        .stats .hits::after {
+            content: ' Covered';
+            color: #b6b6b6;
+        }
+    
+        .stats .misses::after {
+            content: ' Not Covered)';
+            color: #b6b6b6;
+        }
+    
+        .stats .failures::after {
+            content: ' Failures';
+            color: #b6b6b6;
+        }
+    
+        .stats .skipped::after {
+            content: ' Skipped';
+            color: #b6b6b6;
+        }
+    
+        .stats .test-count::after {
+            content: ' Tests';
+            color: #b6b6b6;
+        }
+    
+        .stats .duration::before {
+            content: '(';
+            color: #b6b6b6;
+        }
+    
+        .stats .duration::after {
+            content: ' ms)';
+            color: #b6b6b6;
+        }
+    
+        .high {
+            color: #00d4b4;
+        }
+    
+        .medium {
+            color: #e87d0d;
+        }
+    
+        .low {
+            color: #d4081a;
+        }
+    
+        .terrible {
+            color: #d4081a;
+            font-weight: bold;
+        }
+    
+        #files table {
+            width: 80%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #cbcbcb;
+            color: #363636;
+            border-radius: 3px;
+        }
+    
+        #files thead {
+            display: none;
+        }
+    
+        table td.line,
+        table td.lint,
+        table td.hits,
+        table td.original-line {
+            width: 20px;
+            background: #eaeaea;
+            text-align: right;
+            font-size: 11px;
+            padding: 0 10px;
+            color: #949494;
+            white-space: nowrap;
+        }
+    
+        table td.hits {
+            width: 10px;
+            padding: 2px 5px;
+            color: rgba(0, 0, 0, .2);
+            background: #f0f0f0;
+        }
+    
+        table td.lint.empty {
+            width: 0;
+            padding: 0;
+        }
+    
+        table td.lint > span {
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+            display: inline-block;
+            vertical-align: baseline;
+        }
+    
+        table td.lint .errors {
+            background-color: red;
+        }
+    
+        table td.lint .warnings {
+            background-color: orange;
+        }
+    
+        tr.miss td.line,
+        tr.miss td.hits {
+            background: #e6c3c7;
+        }
+    
+        tr.miss td {
+            background: #f8d5d8;
+        }
+    
+        td.source {
+            padding-left: 15px;
+            line-height: 15px;
+            white-space: pre;
+            font: 12px monaco, monospace;
+        }
+    
+        td.source div {
+            display: inline-block;
+        }
+    
+        td.source div.true {
+            background: #bae8bf;
+        }
+    
+        td.source div.false {
+            background: #e8e5ba;
+        }
+    
+        td.source div.never {
+            background: #f8d5d8;
+        }
+    
+        #tests table {
+            width: 80%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            border: 1px solid #cbcbcb;
+            color: #363636;
+            border-radius: 3px;
+        }
+    
+        #tests thead {
+            background: #F5F5F5;
+        }
+    
+        #tests tr {
+            border: 1px solid #ccc;
+        }
+    
+        #tests td {
+            padding-left: 8px;
+            vertical-align: top;
+        }
+    
+        #tests .success:nth-child(2n) {
+            background: #F5F5F5;
+        }
+    
+        #tests .failure {
+            background: #FF9E9E;
+        }
+    
+        #tests table .skipped {
+            background: #AA82FF;
+        }
+    
+        #tests .success {
+            color: #949494;
+        }
+    
+        #tests .failure .test-title {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+    
+        #tests .stack {
+            margin-top: 4px;
+            padding-left: 15px;
+            margin-bottom: 12px;
+            font: 12px monaco, monospace;
+            white-space: pre;
+            line-height: 15px;
+        }
+    
+        .hide {
+            display: none;
+        }
+    
+        .show {
+            display: inherit;
+        }
+    
+        #tests table .show {
+            display: table-row;
+        }
+    
+        [data-tooltip] {
+            position: relative;
+        }
+    
+        [data-tooltip]:hover:before {
+            border: solid;
+            border-color: #333 transparent;
+            border-width: 6px 6px 0 6px;
+            bottom: 20px;
+            content: "";
+            left: 0;
+            position: absolute;
+            z-index: 99;
+        }
+    
+        [data-tooltip]:hover:after {
+            background: #333;
+            background: rgba(0, 0, 0, .8);
+            border-radius: 5px;
+            bottom: 26px;
+            color: #fff;
+            left: -10px;
+            padding: 5px 15px;
+            position: absolute;
+            z-index: 98;
+            content: attr(data-tooltip);
+            white-space: pre;
+            text-align: left;
+        }
+    
+        .line[data-tooltip]:hover:after {
+            content: "Line number";
+        }
+    
+        .hits[data-tooltip]:hover:after {
+            content: "Number of hits";
+        }
+    
+        .miss .source[data-tooltip]:hover:after {
+            content: "Missed line";
+        }
+    
+        .miss.true[data-tooltip]:hover:after {
+            content: "Condition always true";
+        }
+    
+        .miss.false[data-tooltip]:hover:after {
+            content: "Condition always false";
+        }
+    
+        .miss.never[data-tooltip]:hover:after {
+            content: "Statement never reached";
+        }
+    
+        .lint .errors[data-tooltip]:hover:after {
+            content: "Linting errors:\A" attr(data-tooltip);
+        }
+    
+        .lint .warnings[data-tooltip]:hover:after {
+            content: "Linting warnings:\A" attr(data-tooltip);
+        }
+    
+        .original-line[data-tooltip]:hover:after {
+            content: "Original line in file " attr(data-tooltip);
+        }
+    
+        #filters {
+            width: 75%;
+            margin-top: 25px;
+        }
+    
+        #filters label {
+            margin-right: 10px;
+        }
+    
+        .lint-stats .lint-errors::after {
+            content: ' linting errors';
+            color: #b6b6b6;
+        }
+    
+        .lint-stats .lint-warnings::after {
+            content: ' linting warnings';
+            color: #b6b6b6;
+        }
+    
+        .lint-entry {
+            color: #b6b6b6;
+            float: none;
+            padding: 0;
+        }
+    
+        .lint-entry .level-ERROR {
+            color: #d4081a;
+        }
+    
+        .lint-entry .level-WARNING {
+            color: #e87d0d;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="menu">
+        <li><a href="#tests">Test Report</a></li>
+        <li><a href="#coverage">Coverage Report</a></li>
+        <li class="">
+            <span class="cov high">89.74</span>
+            <a href="#src/persistence.js"><span class="dirname">src/</span><span class="basename">persistence.js</span></a>
+        </li>
+        <li class="">
+            <span class="cov high">81.97</span>
+            <a href="#src/server.js"><span class="dirname">src/</span><span class="basename">server.js</span></a>
+        </li>
+        <li class="">
+            <span class="cov high">92.86</span>
+            <a href="#src/api/mutant.js"><span class="dirname">src/api/</span><span class="basename">mutant.js</span></a>
+        </li>
+        <li class="">
+            <span class="cov high">100</span>
+            <a href="#src/api/stats.js"><span class="dirname">src/api/</span><span class="basename">stats.js</span></a>
+        </li>
+        <li class="">
+            <span class="cov high">100</span>
+            <a href="#src/logic/mutant.js"><span class="dirname">src/logic/</span><span class="basename">mutant.js</span></a>
+        </li>
+        <li class="">
+            <span class="cov high">100</span>
+            <a href="#src/services/mutant.js"><span class="dirname">src/services/</span><span class="basename">mutant.js</span></a>
+        </li>
+        <li class="">
+            <span class="cov high">100</span>
+            <a href="#src/services/stats.js"><span class="dirname">src/services/</span><span class="basename">stats.js</span></a>
+        </li>
+        <li><a href="#linting">Linting Report</a></li>
+    </div>
+    <div id="tests">
+      <h1>Test Report</h1>
+      <div class="stats high">
+          <div class="failures">0</div>
+          <div class="skipped">0</div>
+          <div class="test-count">18</div>
+          <div class="duration">15920</div>
+      </div>
+      <div id="filters">
+          <input type="checkbox" checked="" onchange="filter(this)" value="success" id="show-success">
+          <label for="show-success">Show Success</label>
+          <input type="checkbox" checked="" onchange="filter(this)" value="failure" id="show-failure">
+          <label for="show-failure">Show Failure</label>
+          <br>
+          <input type="checkbox" checked="" onchange="filter(this)" value="Mutants_(Unit)" id="show-Mutants_(Unit)">
+          <label for="show-Mutants_(Unit)">Mutants (Unit)</label>
+          <input type="checkbox" checked="" onchange="filter(this)" value="Mutants_(Integration)" id="show-Mutants_(Integration)">
+          <label for="show-Mutants_(Integration)">Mutants (Integration)</label>
+          <input type="checkbox" checked="" onchange="filter(this)" value="Stats_(Integration)" id="show-Stats_(Integration)">
+          <label for="show-Stats_(Integration)">Stats (Integration)</label>
+      </div>
+      <table>
+          <thead>
+          <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Duration (ms)</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">1</td>
+              <td class="test-title">Mutants (Unit) Validate 4x4 horizontal mutants
+                  
+              </td>
+              <td class="test-duration">6</td>
+          </tr>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">2</td>
+              <td class="test-title">Mutants (Unit) Validate 4x4 vertical mutants
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">3</td>
+              <td class="test-title">Mutants (Unit) Validate 4x4 diagonal increasing mutant
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">4</td>
+              <td class="test-title">Mutants (Unit) Validate 4x4 diagonal decreasing mutant
+                  
+              </td>
+              <td class="test-duration">0</td>
+          </tr>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">5</td>
+              <td class="test-title">Mutants (Unit) Validate 4x4 human
+                  
+              </td>
+              <td class="test-duration">1</td>
+          </tr>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">6</td>
+              <td class="test-title">Mutants (Unit) Validate 1000x1000 horizontal mutant
+                  
+              </td>
+              <td class="test-duration">1574</td>
+          </tr>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">7</td>
+              <td class="test-title">Mutants (Unit) Validate 1000x1000 vertical mutant
+                  
+              </td>
+              <td class="test-duration">1524</td>
+          </tr>
+          <tr class="show Mutants_(Unit) success">
+              <td class="test-id">8</td>
+              <td class="test-title">Mutants (Unit) Validate 1000x1000 human
+                  
+              </td>
+              <td class="test-duration">1498</td>
+          </tr>
+          <tr class="show Mutants_(Integration) success">
+              <td class="test-id">9</td>
+              <td class="test-title">Mutants (Integration) POST /mutants - Validate mutant
+                  
+              </td>
+              <td class="test-duration">17</td>
+          </tr>
+          <tr class="show Mutants_(Integration) success">
+              <td class="test-id">10</td>
+              <td class="test-title">Mutants (Integration) POST /mutants - Validate human
+                  
+              </td>
+              <td class="test-duration">2</td>
+          </tr>
+          <tr class="show Mutants_(Integration) success">
+              <td class="test-id">11</td>
+              <td class="test-title">Mutants (Integration) POST /mutants - Store a mutant
+                  
+              </td>
+              <td class="test-duration">11</td>
+          </tr>
+          <tr class="show Mutants_(Integration) success">
+              <td class="test-id">12</td>
+              <td class="test-title">Mutants (Integration) POST /mutants - Store a human
+                  
+              </td>
+              <td class="test-duration">4</td>
+          </tr>
+          <tr class="show Mutants_(Integration) success">
+              <td class="test-id">13</td>
+              <td class="test-title">Mutants (Integration) POST /mutants - Don&#x60;t store more than once
+                  
+              </td>
+              <td class="test-duration">20</td>
+          </tr>
+          <tr class="show Stats_(Integration) success">
+              <td class="test-id">14</td>
+              <td class="test-title">Stats (Integration) GET /stats - Get empty stats
+                  
+              </td>
+              <td class="test-duration">4</td>
+          </tr>
+          <tr class="show Stats_(Integration) success">
+              <td class="test-id">15</td>
+              <td class="test-title">Stats (Integration) GET /stats - Divide by 0 humans
+                  
+              </td>
+              <td class="test-duration">211</td>
+          </tr>
+          <tr class="show Stats_(Integration) success">
+              <td class="test-id">16</td>
+              <td class="test-title">Stats (Integration) GET /stats - Validate 5 human verifications
+                  
+              </td>
+              <td class="test-duration">218</td>
+          </tr>
+          <tr class="show Stats_(Integration) success">
+              <td class="test-id">17</td>
+              <td class="test-title">Stats (Integration) GET /stats - Validate 5 mutant verifications
+                  
+              </td>
+              <td class="test-duration">221</td>
+          </tr>
+          <tr class="show Stats_(Integration) success">
+              <td class="test-id">18</td>
+              <td class="test-title">Stats (Integration) GET /stats - Validate ratio variations
+                  
+              </td>
+              <td class="test-duration">437</td>
+          </tr>
+          </tbody>
+      </table>
+    
+    </div>    <div id="coverage">
+        <h1>Code Coverage Report</h1>
+        <div class="stats high">
+            <div class="percentage">91.96%</div>
+            <div class="sloc">224</div>
+            <div class="hits">206</div>
+            <div class="misses">18</div>
+        </div>
+        <div id="filters">
+          <input type="checkbox" checked="" onchange="filter(this)" value="generated" id="show-generated">
+          <label for="show-generated">Show generated files</label>
+        </div>
+        <div id="files">
+            <div class="file ">
+                <h2 id="src/persistence.js">src/persistence.js </h2>
+                <div class="stats high">
+                    <div class="percentage">89.74%</div>
+                    <div class="sloc">39</div>
+                    <div class="hits">35</div>
+                    <div class="misses">4</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="src/persistence.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const mongo &#x3D; require(&#x27;mongodb&#x27;)</td>
+                          
+                        </tr>            <tr id="src/persistence.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const MongoClient &#x3D; mongo.MongoClient</td>
+                          
+                        </tr>            <tr id="src/persistence.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const url &#x3D; &#x27;mongodb://localhost:27017/local-mutant-analyzer&#x27;</td>
+                          
+                        </tr>            <tr id="src/persistence.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/persistence.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">var _db</td>
+                          
+                        </tr>            <tr id="src/persistence.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/persistence.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  connectToServer: async () &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    console.log(&#x27;Establishing connection to MongoDB...&#x27;)</td>
+                          
+                        </tr>            <tr id="src/persistence.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    await new Promise(resolve &#x3D;&gt; setTimeout(resolve, 10000))</td>
+                          
+                        </tr>            <tr id="src/persistence.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const client &#x3D; await MongoClient.connect(url, {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      reconnectTries: 60,</td>
+                          
+                        </tr>            <tr id="src/persistence.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      reconnectInterval: 1000,</td>
+                          
+                        </tr>            <tr id="src/persistence.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      autoReconnect: true,</td>
+                          
+                        </tr>            <tr id="src/persistence.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      connectTimeoutMS: 20000,</td>
+                          
+                        </tr>            <tr id="src/persistence.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      socketTimeoutMS: 45000,</td>
+                          
+                        </tr>            <tr id="src/persistence.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      useNewUrlParser: true</td>
+                          
+                        </tr>            <tr id="src/persistence.js__18" class="hit">
+                          <td class="line" data-tooltip>18</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="src/persistence.js__19" class="chunks">
+                          <td class="line" data-tooltip>19</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>      .catch(err &#x3D;&gt; { </div><div class="miss never" data-tooltip>console.log(err)</div><div> })</div></td>
+                          
+                        </tr>            <tr id="src/persistence.js__20" class="hit">
+                          <td class="line" data-tooltip>20</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    _db &#x3D; client.db(&#x27;mutant-analyzer&#x27;)</td>
+                          
+                        </tr>            <tr id="src/persistence.js__21" class="hit">
+                          <td class="line" data-tooltip>21</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  },</td>
+                          
+                        </tr>            <tr id="src/persistence.js__22" class="hit">
+                          <td class="line" data-tooltip>22</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  createIndexes: async () &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__23" class="hit">
+                          <td class="line" data-tooltip>23</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    _db.createCollection(&#x27;stats&#x27;, { capped: true, size: 100000, max: 1 })</td>
+                          
+                        </tr>            <tr id="src/persistence.js__24" class="hit">
+                          <td class="line" data-tooltip>24</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    const statsRow &#x3D; await _db.collection(&#x27;stats&#x27;).count({}, { limit: 1 })</td>
+                          
+                        </tr>            <tr id="src/persistence.js__25" class="chunks">
+                          <td class="line" data-tooltip>25</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss false" data-tooltip>statsRow !&#x3D;&#x3D; 1</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="src/persistence.js__26" class="miss">
+                          <td class="line" data-tooltip>26</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>      await _db.collection(&#x27;stats&#x27;).findOneAndUpdate({}, {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__27" class="hit">
+                          <td class="line" data-tooltip>27</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        $set: {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__28" class="hit">
+                          <td class="line" data-tooltip>28</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          count_mutant_dna: 0,</td>
+                          
+                        </tr>            <tr id="src/persistence.js__29" class="hit">
+                          <td class="line" data-tooltip>29</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          count_human_dna: 0</td>
+                          
+                        </tr>            <tr id="src/persistence.js__30" class="hit">
+                          <td class="line" data-tooltip>30</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        }</td>
+                          
+                        </tr>            <tr id="src/persistence.js__31" class="hit">
+                          <td class="line" data-tooltip>31</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      }, { upsert: true })</td>
+                          
+                        </tr>            <tr id="src/persistence.js__32" class="hit">
+                          <td class="line" data-tooltip>32</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="src/persistence.js__33" class="hit">
+                          <td class="line" data-tooltip>33</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    await _db.collection(&#x27;mutants&#x27;).createIndex({ dna: 1 }, { unique: true })</td>
+                          
+                        </tr>            <tr id="src/persistence.js__34" class="hit">
+                          <td class="line" data-tooltip>34</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  },</td>
+                          
+                        </tr>            <tr id="src/persistence.js__35" class="hit">
+                          <td class="line" data-tooltip>35</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  getDb: () &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__36" class="hit">
+                          <td class="line" data-tooltip>36</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    return _db</td>
+                          
+                        </tr>            <tr id="src/persistence.js__37" class="hit">
+                          <td class="line" data-tooltip>37</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  },</td>
+                          
+                        </tr>            <tr id="src/persistence.js__38" class="hit">
+                          <td class="line" data-tooltip>38</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  buildObjectID: (stringId) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/persistence.js__39" class="chunks">
+                          <td class="line" data-tooltip>39</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    </div><div class="miss never" data-tooltip>return mongo.ObjectID(stringId)</div></td>
+                          
+                        </tr>            <tr id="src/persistence.js__40" class="hit">
+                          <td class="line" data-tooltip>40</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/persistence.js__41" class="hit">
+                          <td class="line" data-tooltip>41</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/persistence.js__42" class="hit">
+                          <td class="line" data-tooltip>42</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+            <div class="file ">
+                <h2 id="src/server.js">src/server.js </h2>
+                <div class="stats high">
+                    <div class="percentage">81.97%</div>
+                    <div class="sloc">61</div>
+                    <div class="hits">50</div>
+                    <div class="misses">11</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="src/server.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">&#x27;use strict&#x27;</td>
+                          
+                        </tr>            <tr id="src/server.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/server.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">require(&#x27;dotenv&#x27;).config()</td>
+                          
+                        </tr>            <tr id="src/server.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/server.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const Hapi &#x3D; require(&#x27;hapi&#x27;)</td>
+                          
+                        </tr>            <tr id="src/server.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const Boom &#x3D; require(&#x27;@hapi/boom&#x27;)</td>
+                          
+                        </tr>            <tr id="src/server.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const mongoUtil &#x3D; require(&#x27;./persistence&#x27;)</td>
+                          
+                        </tr>            <tr id="src/server.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/server.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const server &#x3D; Hapi.server({</td>
+                          
+                        </tr>            <tr id="src/server.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  port: 3030,</td>
+                          
+                        </tr>            <tr id="src/server.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  host: &#x27;0.0.0.0&#x27;,</td>
+                          
+                        </tr>            <tr id="src/server.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  router: {</td>
+                          
+                        </tr>            <tr id="src/server.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    stripTrailingSlash: true</td>
+                          
+                        </tr>            <tr id="src/server.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/server.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">})</td>
+                          
+                        </tr>            <tr id="src/server.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/server.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const addAPIs &#x3D; async () &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/server.js__18" class="hit">
+                          <td class="line" data-tooltip>18</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  await server.register([</td>
+                          
+                        </tr>            <tr id="src/server.js__19" class="hit">
+                          <td class="line" data-tooltip>19</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    require(&#x27;./api/mutant&#x27;),</td>
+                          
+                        </tr>            <tr id="src/server.js__20" class="hit">
+                          <td class="line" data-tooltip>20</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    require(&#x27;./api/stats&#x27;)</td>
+                          
+                        </tr>            <tr id="src/server.js__21" class="hit">
+                          <td class="line" data-tooltip>21</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  ])</td>
+                          
+                        </tr>            <tr id="src/server.js__22" class="hit">
+                          <td class="line" data-tooltip>22</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/server.js__23" class="hit">
+                          <td class="line" data-tooltip>23</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const init &#x3D; async () &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/server.js__24" class="hit">
+                          <td class="line" data-tooltip>24</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  // connect to DB</td>
+                          
+                        </tr>            <tr id="src/server.js__25" class="hit">
+                          <td class="line" data-tooltip>25</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  await mongoUtil.connectToServer()</td>
+                          
+                        </tr>            <tr id="src/server.js__26" class="hit">
+                          <td class="line" data-tooltip>26</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">  server.route({</td>
+                          
+                        </tr>            <tr id="src/server.js__27" class="hit">
+                          <td class="line" data-tooltip>27</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    method: &#x27;GET&#x27;,</td>
+                          
+                        </tr>            <tr id="src/server.js__28" class="hit">
+                          <td class="line" data-tooltip>28</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    path: &#x27;/&#x27;,</td>
+                          
+                        </tr>            <tr id="src/server.js__29" class="hit">
+                          <td class="line" data-tooltip>29</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    handler: (request, h) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/server.js__30" class="chunks">
+                          <td class="line" data-tooltip>30</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>      </div><div class="miss never" data-tooltip>return &#x27;API is running&#x27;</div></td>
+                          
+                        </tr>            <tr id="src/server.js__31" class="hit">
+                          <td class="line" data-tooltip>31</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="src/server.js__32" class="hit">
+                          <td class="line" data-tooltip>32</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  })</td>
+                          
+                        </tr>            <tr id="src/server.js__33" class="hit">
+                          <td class="line" data-tooltip>33</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">  server.route({</td>
+                          
+                        </tr>            <tr id="src/server.js__34" class="hit">
+                          <td class="line" data-tooltip>34</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    method: &#x27;*&#x27;,</td>
+                          
+                        </tr>            <tr id="src/server.js__35" class="hit">
+                          <td class="line" data-tooltip>35</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    path: &#x27;/{any*}&#x27;,</td>
+                          
+                        </tr>            <tr id="src/server.js__36" class="hit">
+                          <td class="line" data-tooltip>36</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    handler: (request, h) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/server.js__37" class="chunks">
+                          <td class="line" data-tooltip>37</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>      </div><div class="miss never" data-tooltip>return Boom.notFound(&#x27;That path doesn\&#x27;t exist!&#x27;)</div></td>
+                          
+                        </tr>            <tr id="src/server.js__38" class="hit">
+                          <td class="line" data-tooltip>38</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="src/server.js__39" class="hit">
+                          <td class="line" data-tooltip>39</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  })</td>
+                          
+                        </tr>            <tr id="src/server.js__40" class="hit">
+                          <td class="line" data-tooltip>40</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">  await addAPIs()</td>
+                          
+                        </tr>            <tr id="src/server.js__41" class="hit">
+                          <td class="line" data-tooltip>41</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">  await mongoUtil.createIndexes()</td>
+                          
+                        </tr>            <tr id="src/server.js__42" class="hit">
+                          <td class="line" data-tooltip>42</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">  try {</td>
+                          
+                        </tr>            <tr id="src/server.js__43" class="chunks">
+                          <td class="line" data-tooltip>43</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>    if (</div><div class="miss false" data-tooltip>!module.parent</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="src/server.js__44" class="miss">
+                          <td class="line" data-tooltip>44</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>      console.log(&#x27;Server up on %s&#x27;, server.info.uri)</td>
+                          
+                        </tr>            <tr id="src/server.js__45" class="miss">
+                          <td class="line" data-tooltip>45</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>      await server.start()</td>
+                          
+                        </tr>            <tr id="src/server.js__46" class="hit">
+                          <td class="line" data-tooltip>46</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    } else {</td>
+                          
+                        </tr>            <tr id="src/server.js__47" class="hit">
+                          <td class="line" data-tooltip>47</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">      await server.initialize()</td>
+                          
+                        </tr>            <tr id="src/server.js__48" class="hit">
+                          <td class="line" data-tooltip>48</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="src/server.js__49" class="hit">
+                          <td class="line" data-tooltip>49</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">    return server</td>
+                          
+                        </tr>            <tr id="src/server.js__50" class="hit">
+                          <td class="line" data-tooltip>50</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  } catch (error) {</td>
+                          
+                        </tr>            <tr id="src/server.js__51" class="miss">
+                          <td class="line" data-tooltip>51</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>    console.error(error)</td>
+                          
+                        </tr>            <tr id="src/server.js__52" class="miss">
+                          <td class="line" data-tooltip>52</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>    process.exit(1)</td>
+                          
+                        </tr>            <tr id="src/server.js__53" class="hit">
+                          <td class="line" data-tooltip>53</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/server.js__54" class="hit">
+                          <td class="line" data-tooltip>54</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/server.js__55" class="hit">
+                          <td class="line" data-tooltip>55</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/server.js__56" class="hit">
+                          <td class="line" data-tooltip>56</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">process.on(&#x27;unhandledRejection&#x27;, (err) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/server.js__57" class="chunks">
+                          <td class="line" data-tooltip>57</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>  </div><div class="miss never" data-tooltip>console.error(err)</div></td>
+                          
+                        </tr>            <tr id="src/server.js__58" class="miss">
+                          <td class="line" data-tooltip>58</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>  process.exit(1)</td>
+                          
+                        </tr>            <tr id="src/server.js__59" class="hit">
+                          <td class="line" data-tooltip>59</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">})</td>
+                          
+                        </tr>            <tr id="src/server.js__60" class="hit">
+                          <td class="line" data-tooltip>60</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/server.js__61" class="hit">
+                          <td class="line" data-tooltip>61</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">void (async function () {</td>
+                          
+                        </tr>            <tr id="src/server.js__62" class="chunks">
+                          <td class="line" data-tooltip>62</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"><div>  if (</div><div class="miss false" data-tooltip>!module.parent</div><div>) {</div></td>
+                          
+                        </tr>            <tr id="src/server.js__63" class="miss">
+                          <td class="line" data-tooltip>63</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>    await init()</td>
+                          
+                        </tr>            <tr id="src/server.js__64" class="hit">
+                          <td class="line" data-tooltip>64</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/server.js__65" class="hit">
+                          <td class="line" data-tooltip>65</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}())</td>
+                          
+                        </tr>            <tr id="src/server.js__66" class="hit">
+                          <td class="line" data-tooltip>66</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/server.js__67" class="hit">
+                          <td class="line" data-tooltip>67</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/server.js__68" class="hit">
+                          <td class="line" data-tooltip>68</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  init</td>
+                          
+                        </tr>            <tr id="src/server.js__69" class="hit">
+                          <td class="line" data-tooltip>69</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/server.js__70" class="hit">
+                          <td class="line" data-tooltip>70</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+            <div class="file ">
+                <h2 id="src/api/mutant.js">src/api/mutant.js </h2>
+                <div class="stats high">
+                    <div class="percentage">92.86%</div>
+                    <div class="sloc">42</div>
+                    <div class="hits">39</div>
+                    <div class="misses">3</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="src/api/mutant.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">&#x27;use strict&#x27;</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const mutantService &#x3D; require(&#x27;../services/mutant&#x27;)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const statsService &#x3D; require(&#x27;../services/stats&#x27;)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const Joi &#x3D; require(&#x27;@hapi/joi&#x27;)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const Boom &#x3D; require(&#x27;@hapi/boom&#x27;)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const plugin &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  name: &#x27;mutant&#x27;,</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  version: &#x27;0.1.0&#x27;,</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  register: (server, options) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    server.route(</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      [</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          method: [&#x27;POST&#x27;],</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          path: &#x27;/mutant&#x27;,</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          config: {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            validate: {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__18" class="hit">
+                          <td class="line" data-tooltip>18</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">              payload: {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__19" class="hit">
+                          <td class="line" data-tooltip>19</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">                dna: Joi.array().items(Joi.string())</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__20" class="hit">
+                          <td class="line" data-tooltip>20</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">              }</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__21" class="hit">
+                          <td class="line" data-tooltip>21</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            },</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__22" class="hit">
+                          <td class="line" data-tooltip>22</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            handler: async (request, h) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__23" class="hit">
+                          <td class="line" data-tooltip>23</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">              try {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__24" class="hit">
+                          <td class="line" data-tooltip>24</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">                const result &#x3D; await mutantService.getOrCreate(request.payload.dna)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__25" class="hit">
+                          <td class="line" data-tooltip>25</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">                statsService.registerInteraction(!!result)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__26" class="hit">
+                          <td class="line" data-tooltip>26</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">                return h.response({</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__27" class="hit">
+                          <td class="line" data-tooltip>27</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">                  message: result ? &#x27;Mutant verified&#x27; : &#x27;Not a mutant&#x27;,</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__28" class="hit">
+                          <td class="line" data-tooltip>28</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">                  id: result.insertedId</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__29" class="hit">
+                          <td class="line" data-tooltip>29</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">                }).code(result ? 200 : 403)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__30" class="hit">
+                          <td class="line" data-tooltip>30</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">              } catch (e) {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__31" class="miss">
+                          <td class="line" data-tooltip>31</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>                if (e.name &#x3D;&#x3D;&#x3D; &#x27;MongoError&#x27; &amp;&amp; e.code &#x3D;&#x3D;&#x3D; 11000) {</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__32" class="miss">
+                          <td class="line" data-tooltip>32</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>                  console.log(e)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__33" class="miss">
+                          <td class="line" data-tooltip>33</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source" data-tooltip>                  throw Boom.badData(&#x60;Error processing request&#x60;)</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__34" class="hit">
+                          <td class="line" data-tooltip>34</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">                }</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__35" class="hit">
+                          <td class="line" data-tooltip>35</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">              }</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__36" class="hit">
+                          <td class="line" data-tooltip>36</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">            }</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__37" class="hit">
+                          <td class="line" data-tooltip>37</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          }</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__38" class="hit">
+                          <td class="line" data-tooltip>38</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        }</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__39" class="hit">
+                          <td class="line" data-tooltip>39</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      ]</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__40" class="hit">
+                          <td class="line" data-tooltip>40</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    )</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__41" class="hit">
+                          <td class="line" data-tooltip>41</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__42" class="hit">
+                          <td class="line" data-tooltip>42</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__43" class="hit">
+                          <td class="line" data-tooltip>43</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__44" class="hit">
+                          <td class="line" data-tooltip>44</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; plugin</td>
+                          
+                        </tr>            <tr id="src/api/mutant.js__45" class="hit">
+                          <td class="line" data-tooltip>45</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+            <div class="file ">
+                <h2 id="src/api/stats.js">src/api/stats.js </h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">19</div>
+                    <div class="hits">19</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="src/api/stats.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">&#x27;use strict&#x27;</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const statsService &#x3D; require(&#x27;../services/stats&#x27;)</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/api/stats.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const plugin &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  name: &#x27;stats&#x27;,</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  version: &#x27;0.1.0&#x27;,</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  register: (server, options) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    server.route(</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      [{</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        method: [&#x27;GET&#x27;],</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        path: &#x27;/stats&#x27;,</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        handler: async (request, h) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          const stats &#x3D; await statsService.getStats()</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>6</td>
+                          <td class="source">          return h.response(stats).type(&#x27;application/json&#x27;)</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        }</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      }]</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    )</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__18" class="hit">
+                          <td class="line" data-tooltip>18</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__19" class="hit">
+                          <td class="line" data-tooltip>19</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__20" class="hit">
+                          <td class="line" data-tooltip>20</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/api/stats.js__21" class="hit">
+                          <td class="line" data-tooltip>21</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; plugin</td>
+                          
+                        </tr>            <tr id="src/api/stats.js__22" class="hit">
+                          <td class="line" data-tooltip>22</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+            <div class="file ">
+                <h2 id="src/logic/mutant.js">src/logic/mutant.js </h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">27</div>
+                    <div class="hits">27</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="src/logic/mutant.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">&#x27;use strict&#x27;</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  isMutant (dna) {</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    let mutant &#x3D; false</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>55</td>
+                          <td class="source">    for (let i &#x3D; 0; i &lt; dna.length; i++) {</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>3208</td>
+                          <td class="source">      for (let j &#x3D; 0; j &lt; dna[i].length; j++) {</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const l &#x3D; dna[i][j]</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const canCheckHorizontal &#x3D; (j &lt; dna[i].length - 3)</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const canCheckDiagonalDec &#x3D; (i &lt; dna.length - 3 &amp;&amp; j &lt; dna[i].length - 3)</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const canCheckDiagonalInc &#x3D; (i - 3 &gt;&#x3D; 0 &amp;&amp; j &lt; dna[i].length - 3)</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const canCheckVertical &#x3D; (i &lt; dna.length - 3)</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const horizontal &#x3D; () &#x3D;&gt; l &#x3D;&#x3D;&#x3D; dna[i][j + 1] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i][j + 2] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i][j + 3]</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const diagonalDec &#x3D; () &#x3D;&gt; l &#x3D;&#x3D;&#x3D; dna[i + 1][j + 1] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i + 2][j + 2] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i + 3][j + 3]</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const diagonalInc &#x3D; () &#x3D;&gt; l &#x3D;&#x3D;&#x3D; dna[i - 1][j + 1] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i - 2][j + 2] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i - 3][j + 3]</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__18" class="hit">
+                          <td class="line" data-tooltip>18</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        const vertical &#x3D; () &#x3D;&gt; l &#x3D;&#x3D;&#x3D; dna[i + 1][j] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i + 2][j] &amp;&amp; l &#x3D;&#x3D;&#x3D; dna[i + 3][j]</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__19" class="hit">
+                          <td class="line" data-tooltip>19</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__20" class="hit">
+                          <td class="line" data-tooltip>20</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>2997759</td>
+                          <td class="source">        if ((canCheckHorizontal &amp;&amp; horizontal()) ||</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__21" class="hit">
+                          <td class="line" data-tooltip>21</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          (canCheckDiagonalDec &amp;&amp; diagonalDec()) ||</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__22" class="hit">
+                          <td class="line" data-tooltip>22</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          (canCheckDiagonalInc &amp;&amp; diagonalInc()) ||</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__23" class="hit">
+                          <td class="line" data-tooltip>23</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">          (canCheckVertical &amp;&amp; vertical())) {</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__24" class="hit">
+                          <td class="line" data-tooltip>24</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>30</td>
+                          <td class="source">          mutant &#x3D; true</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__25" class="hit">
+                          <td class="line" data-tooltip>25</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>30</td>
+                          <td class="source">          break</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__26" class="hit">
+                          <td class="line" data-tooltip>26</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">        }</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__27" class="hit">
+                          <td class="line" data-tooltip>27</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      }</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__28" class="hit">
+                          <td class="line" data-tooltip>28</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__29" class="hit">
+                          <td class="line" data-tooltip>29</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>55</td>
+                          <td class="source">    return mutant</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__30" class="hit">
+                          <td class="line" data-tooltip>30</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__31" class="hit">
+                          <td class="line" data-tooltip>31</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/logic/mutant.js__32" class="hit">
+                          <td class="line" data-tooltip>32</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+            <div class="file ">
+                <h2 id="src/services/mutant.js">src/services/mutant.js </h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">14</div>
+                    <div class="hits">14</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="src/services/mutant.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">&#x27;use strict&#x27;</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const mongoUtil &#x3D; require(&#x27;../persistence&#x27;)</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const mutantLogic &#x3D; require(&#x27;../logic/mutant&#x27;)</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const db &#x3D; mongoUtil.getDb()</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async getOrCreate (dna) {</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    const mutant &#x3D; mutantLogic.isMutant(dna)</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">    const collection &#x3D; db.collection(&#x27;mutants&#x27;)</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">    const mutantInfo &#x3D; { dna: dna.toString(), mutant }</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">    collection.insertOne(mutantInfo).catch((e) &#x3D;&gt; {</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      // Existing mutant</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    })</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">    return mutant</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/services/mutant.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+            <div class="file ">
+                <h2 id="src/services/stats.js">src/services/stats.js </h2>
+                <div class="stats high">
+                    <div class="percentage">100%</div>
+                    <div class="sloc">22</div>
+                    <div class="hits">22</div>
+                    <div class="misses">0</div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Lint</th>
+                            <th>Hits</th>
+                            <th>Source</th>
+                            
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="src/services/stats.js__1" class="hit">
+                          <td class="line" data-tooltip>1</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">&#x27;use strict&#x27;</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__2" class="hit">
+                          <td class="line" data-tooltip>2</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const mongoUtil &#x3D; require(&#x27;../persistence&#x27;)</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__3" class="hit">
+                          <td class="line" data-tooltip>3</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">const db &#x3D; mongoUtil.getDb()</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__4" class="hit">
+                          <td class="line" data-tooltip>4</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>            <tr id="src/services/stats.js__5" class="hit">
+                          <td class="line" data-tooltip>5</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>1</td>
+                          <td class="source">module.exports &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__6" class="hit">
+                          <td class="line" data-tooltip>6</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async getStats () {</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__7" class="hit">
+                          <td class="line" data-tooltip>7</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    const collection &#x3D; db.collection(&#x27;stats&#x27;)</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__8" class="hit">
+                          <td class="line" data-tooltip>8</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>6</td>
+                          <td class="source">    let fields &#x3D; {</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__9" class="hit">
+                          <td class="line" data-tooltip>9</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      count_mutant_dna: true,</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__10" class="hit">
+                          <td class="line" data-tooltip>10</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      count_human_dna: true,</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__11" class="hit">
+                          <td class="line" data-tooltip>11</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">      _id: false</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__12" class="hit">
+                          <td class="line" data-tooltip>12</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    }</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__13" class="hit">
+                          <td class="line" data-tooltip>13</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>6</td>
+                          <td class="source">    const stats &#x3D; await collection.findOne({}, { projection: fields })</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__14" class="hit">
+                          <td class="line" data-tooltip>14</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>6</td>
+                          <td class="source">    const ratio &#x3D; (stats.count_mutant_dna / stats.count_human_dna || 0).toFixed(2)</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__15" class="hit">
+                          <td class="line" data-tooltip>15</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>6</td>
+                          <td class="source">    const formatRatio &#x3D; ratio &#x3D;&#x3D;&#x3D; &#x27;Infinity&#x27; ? &#x27;Infinity&#x27; : parseFloat(ratio)</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__16" class="hit">
+                          <td class="line" data-tooltip>16</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>6</td>
+                          <td class="source">    return { ...stats, ratio: formatRatio }</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__17" class="hit">
+                          <td class="line" data-tooltip>17</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  },</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__18" class="hit">
+                          <td class="line" data-tooltip>18</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  async registerInteraction (isMutant) {</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__19" class="hit">
+                          <td class="line" data-tooltip>19</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">    const collection &#x3D; db.collection(&#x27;stats&#x27;)</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__20" class="hit">
+                          <td class="line" data-tooltip>20</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">    const update &#x3D; isMutant ? { $inc: { count_mutant_dna: 1 } } : { $inc: { count_human_dna: 1 } }</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__21" class="hit">
+                          <td class="line" data-tooltip>21</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip>41</td>
+                          <td class="source">    return collection.findOneAndUpdate({}, update)</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__22" class="hit">
+                          <td class="line" data-tooltip>22</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">  }</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__23" class="hit">
+                          <td class="line" data-tooltip>23</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source">}</td>
+                          
+                        </tr>            <tr id="src/services/stats.js__24" class="hit">
+                          <td class="line" data-tooltip>24</td>
+                          <td class="lint empty"></td>
+                          <td class="hits" data-tooltip></td>
+                          <td class="source"></td>
+                          
+                        </tr>        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>    <div id="linting">
+        <h1>Linting Report</h1>
+            <span>Nothing to show here, linting is disabled.</span>
+    </div>  </body>
+</html>
