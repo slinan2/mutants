@@ -18,7 +18,7 @@ $ docker-compose up
 ## Tests
 Integration and unit tests were created. The coverage is 91.96%.
 
-**This is the coverage report:** http://ec2-52-34-160-15.us-west-2.compute.amazonaws.com:8080/
+**This is the coverage report:** https://slinan2.github.io/mutants/
 
 
 ### Run tests
